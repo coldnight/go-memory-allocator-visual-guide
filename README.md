@@ -13,9 +13,9 @@
 
 一个内存单元的概述经过大大简化之后描述如下：
 
-1. 地址线（Address line）（晶体管做的开关）用于访问电容器（数据到数据线（Data Lines）。
+1. 地址线（Address line）（晶体管做的开关）用于访问电容器（数据到数据线（Data Lines））。
 2. 如果地址线有电流流动（显式为红色），数据线可以写入到电容器，所以电容器带电，逻辑值表示 “1”。
-3. 如果地址线没有电流流动（显式为绿色），数据线不可以写入到电容器，所以带容器不带电，逻辑值表示 “0”
+3. 如果地址线没有电流流动（显式为绿色），数据线不可以写入到电容器，所以电容器不带电，逻辑值表示 “0”
 4. 当 CPU 需要从 RAM 中“读取”值，则顺着“地址线（ADDRESS LINE）”（关闭开关）发送一个电流。如果电容器带电，则电流流向“数据线（DATA LINE）”（值为 1）；否则没有电流流向数据线，所以电容器保持不带电（值为 0）。
 
 下图简单的描述 CPU 和物理内存单元如何交互
@@ -32,7 +32,7 @@
 
 1. [DRAM] 中的每一个字节都分配了一个唯一的数字标识符（地址）。“**物理字节 != 地址线的数量（Physical bytes present != Number of address line）**”（e.g. 16 位 Intel 8088、[PAE]）
 2. 每一个“地址线”可以发送 1-bit 的值，用于表示给定字节地址中的“一个位（SINGLE BIT）”
-3. 在我们的上面给出的图中，我们有 32 个地址线。所以每个**字节（BYTE）**都有“32 位”作为地址。
+3. 在我们的上面给出的图中，我们有 32 个地址线。所以每个 **字节（BYTE）** 都有“32 位”作为地址。
 
     - `[ 00000000000000000000000000000000 ]` — 低内存地址
     - `[ 11111111111111111111111111111111 ]` — 高内存地址
@@ -75,13 +75,13 @@
 
 > 如果堆上有足够的空间的满足我们代码的内存申请，内存分配器可以完成内存申请无需内核参与，否则将通过操作系统调用（`brk`）进行扩展堆，通常是申请一大块内存。（对于 `malloc` 大默认指的是大于 `MMAP_THRESHOLD` 个字节 - 128KB）。
 
-但是，内存分配器除了更新 `brk address` 还有其他职责。其中主要的一项就是如何**减少** `内部（internal）`和`外部（external）`碎片和加速分配当前块。考虑我们的程序以串行的方式（p1 到 p4）通过 `malloc(size)` 函数申请一块连续的内存然后通过 `free(pointer)` 函数进行释放。
+但是，内存分配器除了更新 `brk address` 还有其他职责。其中主要的一项就是如何**减少** `内部（internal）`和`外部（external）`碎片和如何快速分配当前块。考虑我们的程序以串行的方式（p1 到 p4）通过 `malloc(size)` 函数申请一块连续的内存然后通过 `free(pointer)` 函数进行释放。
 
 ![An external fragmentation demonstration](images/5c6fcc0db9048569f7000008.png)
 
 在 p4 阶段由于内存碎片化即使我们有足够的内存块依然无法满足申请的 6 个连续的内存块。
 
-**所以我们该如何减少内存碎片化呢？**答案取决是使用哪种内存分配算法，也就是使用哪个底层库。
+**所以我们该如何减少内存碎片化呢** ？答案取决是使用哪种内存分配算法，也就是使用哪个底层库。
 
 我们将简单看一下一个和 Go 内存分配器建模相近的内存分配器： `TCMalloc`。
 
@@ -107,7 +107,7 @@ TCMalloc 管理的堆由一组页组成，**一组连续的页面被表示为 sp
 
 ## Go 内存分配器
 
-我们知道 Go 运行时（Go Runtime）调度器在调度时会将 **Goroutines(G)** 绑定到 **逻辑处理器（P）(Logical Processors）**运行。同样的，Go 实现的 TCMalloc 将内存页（Memory Pages）分为 67 种不同大小规格的块。 
+我们知道 Go 运行时（Go Runtime）调度器在调度时会将 **Goroutines(G)** 绑定到 **逻辑处理器（P）(Logical Processors）** 运行。类似的，Go 实现的 TCMalloc 将内存页（Memory Pages）分为 67 种不同大小规格的块。 
 
 > 如果你不熟悉 Go 的调度器可以先参见《[
 Go scheduler: Ms, Ps & Gs
@@ -123,13 +123,13 @@ Go 中这些页通过 **mspan** 结构体进行管理。
 
 ### mspan
 
-简单的说，`mspan` 是包含页起始地址、页的 span 规格和页的数量的一个双端链表。
+简单的说，`mspan` 是一个包含页起始地址、页的 span 规格和页的数量的双端链表。
 
 ![Illustrative Representation of a mspan in Go memory allocator](images/5c6fd878b9048569f700000d.png)
 
 ### mcache
 
-Go 像 TCMalloc 一样为每一个 **逻辑处理器（P）（Logical Processors）**提供一个本地线程缓存（Local Thread Cache）内存称作 **mcache**，所以如果 Goroutine 需要内存可以直接从 **mcache** 中获取，由于在同一时间只有一个 Goroutine 运行在 **逻辑处理器（P）（Logical Processors）** 上，所以中间不需要任何锁的参与。
+Go 像 TCMalloc 一样为每一个 **逻辑处理器（P）（Logical Processors）** 提供一个本地线程缓存（Local Thread Cache）称作 **mcache**，所以如果 Goroutine 需要内存可以直接从 **mcache** 中获取，由于在同一时间只有一个 Goroutine 运行在 **逻辑处理器（P）（Logical Processors）** 上，所以中间不需要任何锁的参与。
 
 **mcache** 包含所有大小规格的 **mspan** 作为缓存。
 
